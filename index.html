@@ -445,6 +445,11 @@ var CONFIG={SUPABASE_URL:"https://kisguiaqgqrwtihgslcm.supabase.co",SUPABASE_ANO
 var GS=function(id){return document.getElementById(id)};
 var GSA=function(s){return document.querySelectorAll(s)};
 function esc(s){if(s==null)return"";var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML}
+function toast(msg,type){
+  var c=GS("toast-container");if(!c)return;
+  var el=document.createElement("div");el.className="toast "+(type||"info");el.textContent=msg;
+  c.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},2500)
+}
 var ST={user:null,warehouse:null,warehouses:[],aiBusy:0,undoQ:[],showAll:0,locFilter:"",activeTab:"inv",aiReply:null,data:{inv:[],locs:[],recs:[],logs:[],members:[]}};
 function LGet(k,d){try{var v=localStorage.getItem("ks_"+k);return v?JSON.parse(v):d}catch(e){return d}}
 function LSet(k,v){try{localStorage.setItem("ks_"+k,JSON.stringify(v))}catch(e){}}
