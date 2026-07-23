@@ -94,6 +94,17 @@
  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
  .status-right { display:flex; align-items:center; gap:6px; flex-shrink:0; font-size:12px; }
  .status-right .un { max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary); }
+.version-badge {
+  position:fixed; top:8px; left:8px; z-index:9999;
+  font-size:11px; color:var(--text-secondary);
+  background:rgba(0,0,0,0.04); padding:2px 8px; border-radius:4px;
+  font-family:monospace; user-select:none; pointer-events:none;
+}
+#page-main .version-badge {
+  position:static; top:auto; left:auto; z-index:auto;
+  background:transparent; padding:0; margin-left:auto; margin-right:8px;
+  font-size:11px;
+}
  .role-badge {
    display:inline-block; padding:1px 6px; border-radius:4px; font-size:11px;
    background:var(--primary); color:#fff;
@@ -323,6 +334,8 @@
  
  <!-- ===== 登录页 ===== -->
  <div id="page-login" class="page active">
+  <div class="version-badge" id="ver-login">V1.2</div>
+  <div class="version-badge" id="ver-login">V1.2</div>
    <div class="page-center">
      <h1>食材管理</h1>
      <div class="form">
@@ -363,6 +376,8 @@
      <div class="status-left">
        <span class="wh-name" id="wh-name" onclick="showWarehouseList()">选择仓库 ▾</span>
        <span class="status-dot" id="status-dot"></span>
+      <span class="version-badge" id="ver-main">V1.2</span>
+      <span class="version-badge" id="ver-main">V1.2</span>
      </div>
      <div class="status-right">
        <span class="un" id="status-un"></span>
