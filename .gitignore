@@ -1,0 +1,14 @@
+﻿.vercel/
+.vercel_data/
+.vercel_home/
+.vercel_user/
+.node/
+.agents/
+__pycache__/
+*.pyc
+.DS_Store
+deploy.py
+fix_cdn.py
+check_fix.py
+verify.py
+gen_pdf.py

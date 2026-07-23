@@ -1,0 +1,495 @@
+ <!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+ <title>食材管理</title>
+ 
+ <style>
+ /* ==================== 变量 ==================== */
+ :root {
+   --primary: #DC2626;
+   --primary-light: #EF4444;
+   --orange: #F97316;
+   --bg: #FFF8F0;
+   --card: #FFFFFF;
+   --text: #1F2937;
+   --text-secondary: #6B7280;
+   --border: #E5E7EB;
+   --warn: #F59E0B;
+   --danger: #EF4444;
+   --success: #22C55E;
+   --radius: 8px;
+   --shadow: 0 2px 8px rgba(0,0,0,0.08);
+   --max-w: 480px;
+   --status-h: 44px;
+   --tab-h: 42px;
+   --input-h: 52px;
+ }
+ * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+ body {
+   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+   background: var(--bg); color: var(--text); font-size: 14px; line-height:1.5;
+   overscroll-behavior:none;
+ }
+ input, select, button, textarea { font-family:inherit; font-size:inherit; }
+ 
+ /* ==================== 容器 ==================== */
+ .app-container {
+   max-width: var(--max-w); margin:0 auto; min-height:100vh;
+   background: var(--bg); position:relative;
+ }
+ 
+ /* ==================== 页面 ==================== */
+ .page { display:none; }
+ .page.active { display:block; }
+ .page-center {
+   display:flex; flex-direction:column; align-items:center; justify-content:center;
+   min-height:100vh; padding:24px;
+ }
+ .page-center h1 {
+   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-weight:bold; font-size:28px; color:var(--primary);
+   margin-bottom:32px;
+ }
+ 
+ /* ==================== 表单 ==================== */
+ .form { width:100%; max-width:360px; }
+ .form input[type="text"], .form input[type="password"] {
+   width:100%; height:44px; border:1px solid var(--border); border-radius:var(--radius);
+   padding:0 12px; margin-bottom:12px; background:var(--card); outline:none;
+   transition:border-color .2s;
+ }
+ .form input:focus { border-color:var(--primary); }
+ .form .checkbox-row {
+   display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; color:var(--text-secondary);
+ }
+ .form .checkbox-row input { width:16px; height:16px; accent-color:var(--primary); }
+ .form button {
+   width:100%; height:44px; border:none; border-radius:var(--radius);
+   background:var(--primary); color:#fff; font-size:15px; font-weight:600;
+   cursor:pointer; margin-top:8px; transition:opacity .2s;
+ }
+ .form button:active { opacity:0.8; }
+ .form button:disabled { opacity:0.5; cursor:not-allowed; }
+ .form .link {
+   display:block; text-align:center; margin-top:16px; color:var(--primary);
+   cursor:pointer; font-size:13px;
+ }
+ 
+ /* ==================== 状态栏 ==================== */
+ #status-bar {
+   height:var(--status-h); display:flex; align-items:center; justify-content:space-between;
+   padding:0 12px; background:var(--card); border-bottom:1px solid var(--border);
+   position:sticky; top:0; z-index:10;
+ }
+ .status-left { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+ .status-left .wh-name {
+   font-weight:600; font-size:15px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+ }
+ .status-dot {
+   width:8px; height:8px; border-radius:50%; background:var(--success); flex-shrink:0;
+   transition:background .3s;
+ }
+ .status-dot.busy { background:var(--orange); animation:pulse 1s infinite; }
+ @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+ .status-right { display:flex; align-items:center; gap:6px; flex-shrink:0; font-size:12px; }
+ .status-right .un { max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary); }
+ .role-badge {
+   display:inline-block; padding:1px 6px; border-radius:4px; font-size:11px;
+   background:var(--primary); color:#fff;
+ }
+ .role-badge.admin { background:#7C3AED; }
+ .role-badge.staff { background:var(--text-secondary); }
+ .status-btn { cursor:pointer; padding:2px 6px; border-radius:4px; color:var(--text-secondary); }
+ .status-btn:active { background:var(--border); }
+ 
+ /* ==================== 标签栏 ==================== */
+ #tab-bar {
+   height:var(--tab-h); display:flex; background:var(--card); border-bottom:1px solid var(--border);
+   position:sticky; top:var(--status-h); z-index:9;
+ }
+ #tab-bar .tab {
+   flex:1; display:flex; align-items:center; justify-content:center;
+   font-size:14px; color:var(--text-secondary); cursor:pointer; border-bottom:2px solid transparent;
+   transition:all .2s;
+ }
+ #tab-bar .tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+ #tab-bar .tab:active { opacity:0.7; }
+ 
+ /* ==================== 标签内容 ==================== */
+ .tab-content { display:none; padding:12px; padding-bottom:calc(var(--input-h) + 16px); }
+ .tab-content.active { display:block; }
+ 
+ /* ==================== 工具栏 ==================== */
+ .toolbar {
+   display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+ }
+ .toolbar select {
+   height:32px; border:1px solid var(--border); border-radius:var(--radius);
+   padding:0 8px; background:var(--card); font-size:13px; outline:none; flex:1; min-width:0;
+ }
+ .toolbar-btn {
+   padding:6px 12px; border-radius:var(--radius); font-size:12px; cursor:pointer;
+   background:var(--primary); color:#fff; border:none; white-space:nowrap;
+ }
+ .toolbar-btn:active { opacity:0.8; }
+ .toolbar-btn.ghost { background:transparent; color:var(--primary); border:1px solid var(--primary); }
+ 
+ /* ==================== 库存列表 ==================== */
+ .inv-item {
+   display:flex; align-items:center; padding:10px 12px; background:var(--card);
+   border-radius:var(--radius); margin-bottom:6px; box-shadow:var(--shadow);
+   transition:all .2s; position:relative; overflow:hidden;
+ }
+ .inv-item.danger {
+   background:#FEF2F2; border-left:3px solid var(--danger); animation:shake 0.5s;
+ }
+ .inv-item.warn { background:#FFFBEB; border-left:3px solid var(--warn); }
+ @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+ .inv-item .info { flex:1; min-width:0; }
+ .inv-item .info .name { font-weight:500; font-size:14px; }
+ .inv-item .info .meta { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+ .inv-item .qty-wrap { position:relative; margin:0 12px; font-weight:600; font-size:15px; white-space:nowrap; }
+ .inv-item .qty-wrap .warn-icon {
+   position:absolute; top:-8px; right:-12px; font-size:10px; color:var(--warn);
+   cursor:pointer; display:none;
+ }
+ .inv-item .qty-wrap .warn-icon.show { display:block; }
+ .inv-item .actions { display:flex; gap:4px; }
+ .inv-item .actions button {
+   padding:4px 8px; border:none; border-radius:4px; cursor:pointer; font-size:11px;
+   transition:opacity .2s;
+ }
+ .inv-item .actions button:active { opacity:0.7; }
+ .inv-item .actions .btn-move { background:var(--orange); color:#fff; }
+ .inv-item .actions .btn-del { background:var(--danger); color:#fff; }
+ 
+ /* ==================== 底部输入栏 ==================== */
+ #input-bar {
+   position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+   width:100%; max-width:var(--max-w); background:var(--card);
+   border-top:1px solid var(--border); padding:6px 12px; z-index:20;
+ }
+ #ai-bubble {
+   margin-bottom:6px; padding:8px 12px; background:#F3F4F6; border-radius:8px;
+   font-size:13px; color:var(--text-secondary); max-height:80px; overflow-y:auto;
+ }
+ .input-row { display:flex; gap:8px; align-items:center; }
+ .input-row input {
+   flex:1; height:36px; border:1px solid var(--border); border-radius:20px;
+   padding:0 14px; outline:none; background:var(--bg); transition:border-color .2s;
+ }
+ .input-row input:focus { border-color:var(--primary); }
+ .input-row input:disabled { opacity:0.5; }
+ .input-row button {
+   height:36px; padding:0 16px; border:none; border-radius:20px;
+   background:var(--primary); color:#fff; font-weight:600; cursor:pointer;
+   transition:opacity .2s; white-space:nowrap;
+ }
+ .input-row button:disabled { opacity:0.5; cursor:not-allowed; }
+ .input-row button:active:not(:disabled) { opacity:0.8; }
+ 
+ /* ==================== 弹窗 ==================== */
+ #modal-overlay {
+   position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100;
+   display:flex; align-items:flex-end; justify-content:center;
+   animation:fadeIn .2s;
+ }
+ @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+ #modal-content {
+   background:var(--card); border-radius:12px 12px 0 0; width:100%; max-width:var(--max-w);
+   max-height:80vh; overflow-y:auto; padding:20px;
+   animation:slideUp .25s ease-out;
+ }
+ @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+ #modal-content h2 { font-size:16px; margin-bottom:16px; color:var(--text); }
+ #modal-content .close-btn {
+   float:right; cursor:pointer; font-size:20px; color:var(--text-secondary);
+   line-height:1;
+ }
+ #modal-content label { display:block; font-size:13px; margin-bottom:4px; color:var(--text-secondary); }
+ #modal-content input, #modal-content select {
+   width:100%; height:40px; border:1px solid var(--border); border-radius:var(--radius);
+   padding:0 12px; margin-bottom:12px; outline:none;
+ }
+ #modal-content input:focus { border-color:var(--primary); }
+ #modal-content .btn-primary {
+   width:100%; height:42px; border:none; border-radius:var(--radius);
+   background:var(--primary); color:#fff; font-size:14px; font-weight:600;
+   cursor:pointer; margin-top:8px;
+ }
+ #modal-content .btn-primary:active { opacity:0.8; }
+ #modal-content .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+ #modal-content .member-item {
+   display:flex; align-items:center; justify-content:space-between;
+   padding:8px 0; border-bottom:1px solid var(--border);
+ }
+ #modal-content .member-item:last-child { border-bottom:none; }
+ #modal-content .member-item .mi-info { font-size:14px; }
+ #modal-content .member-item .mi-info small { color:var(--text-secondary); font-size:12px; }
+ #modal-content .member-item .mi-actions { display:flex; gap:6px; }
+ #modal-content .member-item button {
+   padding:4px 10px; border:none; border-radius:4px; cursor:pointer; font-size:12px;
+ }
+ #modal-content .member-item .btn-danger { background:var(--danger); color:#fff; }
+ #modal-content .member-item .btn-primary-sm { background:var(--primary); color:#fff; }
+ 
+ /* ==================== Toast ==================== */
+ #toast-container {
+   position:fixed; top:60px; left:50%; transform:translateX(-50%);
+   z-index:200; display:flex; flex-direction:column; align-items:center; gap:6px;
+   pointer-events:none;
+ }
+ .toast {
+   padding:8px 20px; border-radius:8px; font-size:13px; color:#fff;
+   animation:slideDown .3s ease-out; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+   pointer-events:auto; max-width:90vw; text-align:center;
+ }
+ .toast.info { background:var(--text); }
+ .toast.success { background:var(--success); }
+ .toast.error { background:var(--danger); }
+ @keyframes slideDown { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
+ 
+ /* ==================== 菜谱卡片 ==================== */
+ .recipe-card {
+   background:var(--card); border-radius:var(--radius); padding:14px;
+   margin-bottom:8px; box-shadow:var(--shadow); cursor:pointer;
+ }
+ .recipe-card .rc-title { font-weight:600; font-size:14px; }
+ .recipe-card .rc-body { display:none; margin-top:8px; font-size:13px; color:var(--text-secondary); }
+ .recipe-card .rc-body.open { display:block; }
+ .recipe-card .rc-body ol { padding-left:20px; margin-top:4px; }
+ .recipe-card .rc-body ol li { margin-bottom:4px; }
+ .recipe-card .rc-del {
+   float:right; cursor:pointer; color:var(--danger); font-size:12px; padding:2px 6px;
+ }
+ 
+ /* ==================== 日志 ==================== */
+ .log-item {
+   padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;
+ }
+ .log-item .log-time { color:var(--text-secondary); font-size:11px; }
+ .log-item .log-action { margin-top:2px; }
+ .log-item .log-undo { color:var(--primary); cursor:pointer; font-size:12px; margin-left:8px; }
+ 
+ /* ==================== 管理员面板 ==================== */
+ .admin-section { margin-bottom:20px; }
+ .admin-section h3 { font-size:14px; margin-bottom:8px; }
+ .admin-section .admin-btn {
+   display:block; width:100%; padding:10px; text-align:center; border:1px solid var(--border);
+   border-radius:var(--radius); cursor:pointer; font-size:13px; margin-bottom:6px;
+   transition:background .2s;
+ }
+ .admin-section .admin-btn:active { background:var(--border); }
+ .admin-section .user-row {
+   display:flex; align-items:center; justify-content:space-between;
+   padding:6px 0; border-bottom:1px solid var(--border); font-size:13px;
+ }
+ 
+ /* ==================== 仓库列表弹窗 ==================== */
+ .wh-item {
+   display:flex; align-items:center; justify-content:space-between;
+   padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;
+ }
+ .wh-item:last-child { border-bottom:none; }
+ .wh-item:active { opacity:0.7; }
+ .wh-item .wh-info { font-size:14px; }
+ .wh-item .wh-info small { color:var(--text-secondary); font-size:12px; margin-left:6px; }
+ .wh-item .wh-del { color:var(--danger); font-size:12px; padding:4px 8px; cursor:pointer; }
+ 
+ /* ==================== 位置选择弹窗 ==================== */
+ .loc-option {
+   padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);
+   margin-bottom:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px;
+ }
+ .loc-option:active { background:var(--border); }
+ .loc-option .loc-type {
+   font-size:11px; padding:1px 6px; border-radius:4px;
+ }
+ .loc-option .loc-type.room { background:#FEF3C7; color:#92400E; }
+ .loc-option .loc-type.cold { background:#DBEAFE; color:#1E40AF; }
+ .loc-option .loc-type.freeze { background:#E0E7FF; color:#3730A3; }
+ 
+ /* ==================== AI 选择库存弹窗 ==================== */
+ .ai-stock-option {
+   padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius);
+   margin-bottom:6px; cursor:pointer; font-size:13px; display:flex; justify-content:space-between;
+ }
+ .ai-stock-option:active { background:var(--border); }
+ </style>
+ </head>
+ <body>
+ <div class="app-container">
+ 
+ <!-- ===== 登录页 ===== -->
+ <div id="page-login" class="page active">
+   <div class="page-center">
+     <h1>食材管理</h1>
+     <div class="form">
+       <input id="login-un" type="text" placeholder="用户名" autocomplete="username">
+       <input id="login-pw" type="password" placeholder="密码" autocomplete="current-password">
+       <div class="checkbox-row">
+         <input id="login-remember" type="checkbox">
+         <label for="login-remember">记住密码</label>
+       </div>
+       <div class="checkbox-row">
+         <input id="login-auto" type="checkbox">
+         <label for="login-auto">自动登录</label>
+       </div>
+       <button id="btn-login" onclick="handleLogin()">登录</button>
+       <span class="link" onclick="showPage('page-register')">没有账号？去注册</span>
+     </div>
+   </div>
+ </div>
+ 
+ <!-- ===== 注册页 ===== -->
+ <div id="page-register" class="page">
+   <div class="page-center">
+     <h1>注册</h1>
+     <div class="form">
+       <input id="reg-un" type="text" placeholder="用户名（2-20位中文/英文/数字/下划线）" maxlength="20">
+       <input id="reg-pw" type="password" placeholder="密码（至少6位）">
+       <input id="reg-cpw" type="password" placeholder="确认密码">
+       <button id="btn-reg" onclick="handleRegister()">注册</button>
+       <span class="link" onclick="showPage('page-login')">已有账号？去登录</span>
+     </div>
+   </div>
+ </div>
+ 
+ <!-- ===== 主页 ===== -->
+ <div id="page-main" class="page">
+   <!-- 状态栏 -->
+   <div id="status-bar">
+     <div class="status-left">
+       <span class="wh-name" id="wh-name" onclick="showWarehouseList()">选择仓库 ▾</span>
+       <span class="status-dot" id="status-dot"></span>
+     </div>
+     <div class="status-right">
+       <span class="un" id="status-un"></span>
+       <span class="role-badge" id="status-role"></span>
+       <span class="status-btn" onclick="showSettings()" title="设置">⚙</span>
+       <span class="status-btn" onclick="handleLogout()" title="退出">退出</span>
+     </div>
+   </div>
+ 
+   <!-- 标签栏 -->
+   <div id="tab-bar">
+     <span class="tab active" onclick="switchTab('inv')">库存管理</span>
+     <span class="tab" onclick="switchTab('recipe')">菜谱管理</span>
+   </div>
+ 
+   <!-- 库存标签 -->
+   <div id="tab-inv" class="tab-content active">
+     <div class="toolbar">
+       <select id="loc-filter" onchange="onLocFilter()">
+         <option value="">全部位置</option>
+       </select>
+       <button class="toolbar-btn ghost" id="btn-toggle-all" onclick="toggleShowAll()">展开全部</button>
+       <button class="toolbar-btn" onclick="showAddStock()">+ 新增</button>
+     </div>
+     <div id="inv-list"></div>
+     <div id="undo-bar" style="display:none;position:fixed;bottom:var(--input-h);left:50%;transform:translateX(-50%);z-index:15;padding:4px 12px;background:#374151;color:#fff;border-radius:8px;font-size:12px;max-width:var(--max-w);width:100%;align-items:center;justify-content:space-between;">
+       <span id="undo-msg"></span>
+       <button id="btn-undo" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:12px;margin-left:8px;">撤销</button>
+     </div>
+   </div>
+ 
+   <!-- 菜谱标签 -->
+   <div id="tab-recipe" class="tab-content">
+     <div class="toolbar">
+       <button class="toolbar-btn" onclick="showAddRecipe()">+ 新增菜谱</button>
+     </div>
+     <div id="recipe-list"></div>
+   </div>
+ 
+   <!-- 底部输入栏 -->
+   <div id="input-bar">
+     <div id="ai-bubble" style="display:none"></div>
+     <div class="input-row">
+       <input id="ai-input" placeholder="说人话就能管库存..." maxlength="50">
+       <button id="btn-send" onclick="handleAI()">发送</button>
+     </div>
+   </div>
+ </div>
+ 
+ </div><!-- /app-container -->
+ 
+ <!-- ===== 弹窗遮罩 ===== -->
+ <div id="modal-overlay" style="display:none" onclick="hideModal(event)">
+   <div id="modal-content" onclick="if(event)event.stopPropagation()"></div>
+ </div>
+ 
+ <!-- ===== Toast容器 ===== -->
+ <div id="toast-container"></div>
+ 
+ <!-- ===== 隐藏的文件上传输入 ===== -->
+ <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+ 
+ <script>
+
+/* <<<<< CONFIG >>>>> */
+var CONFIG={SUPABASE_URL:"https://kisguiaqgqrwtihgslcm.supabase.co",SUPABASE_ANON_KEY:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2d1aWFxZ3Fyd3RpaGdzbGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3ODU4MzcsImV4cCI6MjEwMDM2MTgzN30.l3rl2oHr0kM6Ilc2UcUDIO-0xAKpOKcYDoLHhcHiVuk",DEEPSEEK_KEY:"sk-f1beffdeb6eb4f548e4225efd0795320",SUPABASE_TIMEOUT:10000,DEEPSEEK_TIMEOUT:15000};
+var GS=function(id){return document.getElementById(id)};
+var GSA=function(s){return document.querySelectorAll(s)};
+function esc(s){if(s==null)return"";var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML}
+var ST={user:null,warehouse:null,warehouses:[],aiBusy:0,undoQ:[],showAll:0,locFilter:"",activeTab:"inv",aiReply:null,data:{inv:[],locs:[],recs:[],logs:[],members:[]}};
+function LGet(k,d){try{var v=localStorage.getItem("ks_"+k);return v?JSON.parse(v):d}catch(e){return d}}
+function LSet(k,v){try{localStorage.setItem("ks_"+k,JSON.stringify(v))}catch(e){}}
+function LDel(k){try{localStorage.removeItem("ks_"+k)}catch(e){}}
+
+/* <<<<< AUTH + WAREHOUSE >>>>> */
+async function handleRegister(){var un=GS("reg-un").value.trim();var pw=GS("reg-pw").value;var cpw=GS("reg-cpw").value;if(un.length<2||un.length>20){toast("用户名需要2-20位","error");return}if(!/^[一-龥a-zA-Z0-9_]+$/.test(un)){toast("用户名只允许中英文数字下划线","error");return}if(pw.length<6){toast("密码至少6位","error");return}if(pw!==cpw){toast("两次密码不一致","error");return}try{var exist=await sbGet("accounts",{"username":"eq."+un});if(exist&&exist.length>0){toast("用户名已被占用","error");return}await sbPost("accounts",{username:un,password:pw,role:"user"});toast("注册成功，请登录","success");showPage("page-login")}catch(e){toast("网络异常，请重试","error")}}
+async function handleLogin(){var un=GS("login-un").value.trim();var pw=GS("login-pw").value;var btn=GS("btn-login");btn.disabled=true;try{var users=await sbGet("accounts",{"username":"eq."+un});if(!users||users.length===0){toast("用户名错误","error");btn.disabled=false;return}var u=users[0];if(u.password!==pw){toast("密码错误","error");btn.disabled=false;return}ST.user={id:u.id,username:u.username,role:u.role};LSet("current_user",ST.user);if(GS("login-remember").checked){var acc=LGet("saved_accounts",[]);var idx=acc.findIndex(function(a){return a.u===un});if(idx>=0)acc.splice(idx,1);acc.push({u:un,p:pw});LSet("saved_accounts",acc)}if(GS("login-auto").checked)LSet("auto_login","1");else LDel("auto_login");await loadUserWarehouses();showPage("page-main");renderAll();var last=LGet("current_warehouse",null);if(last){var found=ST.warehouses.find(function(w){return w.id===last.id});if(found){ST.warehouse=found;LSet("current_warehouse",found);await refreshData();return}}if(ST.warehouses.length>0){ST.warehouse=ST.warehouses[0];LSet("current_warehouse",ST.warehouses[0]);await refreshData()}else{showCreateWarehousePrompt()}btn.disabled=false}catch(e){console.error(e);toast("网络异常，请重试","error");btn.disabled=false}}
+function handleLogout(){LDel("current_user");LDel("auto_login");ST.user=null;ST.warehouse=null;ST.warehouses=[];ST.data={inv:[],locs:[],recs:[],logs:[],members:[]};showPage("page-login")}
+async function loadUserWarehouses(){try{if(ST.user.role==="admin"){var whs=await sbGet("warehouses",{});ST.warehouses=whs||[]}else{var mems=await sbGet("warehouse_members",{"user_id":"eq."+ST.user.id});if(!mems||mems.length===0){ST.warehouses=[];return}var ids=mems.map(function(m){return m.warehouse_id});ST.warehouses=[];for(var i=0;i<ids.length;i++){var w=await sbGet("warehouses",{"id":"eq."+ids[i]});if(w&&w[0])ST.warehouses.push(w[0])}}}catch(e){console.error(e)}}
+function showCreateWarehousePrompt(){showModal("<h2>没有仓库</h2><p style="margin-bottom:16px;color:#6B7280">你还没有仓库，请先创建一个</p><input id="modal-wh-name" placeholder="仓库名称"><button class="btn-primary" onclick="handleCreateWarehouse()">创建</button>")}
+async function handleCreateWarehouse(){var name=GS("modal-wh-name").value.trim();if(!name){toast("请输入仓库名称","error");return}try{var id=await sbRpc("create_warehouse",{p_name:name,p_user_id:ST.user.id});ST.warehouse={id:id,name:name};LSet("current_warehouse",ST.warehouse);hideModal();await loadUserWarehouses();await refreshData()}catch(e){toast("网络异常","error")}}
+async function showWarehouseList(){var html="<h2>切换仓库<span class="close-btn" onclick="hideModal()">✖</span></h2><div onclick="showCreateWarehousePrompt()" style="padding:8px;color:var(--primary);cursor:pointer;margin-bottom:8px">+ 创建新仓库</div>";for(var i=0;i<ST.warehouses.length;i++){var w=ST.warehouses[i];var isActive=ST.warehouse&&ST.warehouse.id===w.id;html+="<div class="wh-item""+(isActive?" style="background:#FEF2F2"":"")+" onclick="switchToWarehouse('"+w.id+"')"><div class="wh-info">"+esc(w.name)+(isActive?" <small>当前</small>":"")+"</div></div>"}html+="<div style="margin-top:12px;color:var(--danger);cursor:pointer;font-size:13px" onclick="showDeleteWarehouse()">删除当前仓库</div>";showModal(html)}
+async function switchToWarehouse(id){var w=ST.warehouses.find(function(w){return w.id===id});if(!w)return;ST.warehouse=w;LSet("current_warehouse",w);hideModal();await refreshData()}
+function showDeleteWarehouse(){hideModal();if(myRole()!=="owner"&&ST.user.role!=="admin"){toast("无权限","error");return}showModal("<h2>删除仓库</h2><p style="margin-bottom:16px;color:#ef4444">删除后所有数据不可恢复，确认删除？</p><button class="btn-primary" style="background:#ef4444" onclick="handleDeleteWarehouse()">确认删除</button>")}
+async function handleDeleteWarehouse(){try{await sbRpc("delete_warehouse_cascade",{p_warehouse_id:ST.warehouse.id,p_user_id:ST.user.id});hideModal();toast("仓库已删除","success");ST.warehouse=null;await loadUserWarehouses();if(ST.warehouses.length>0){ST.warehouse=ST.warehouses[0];LSet("current_warehouse",ST.warehouses[0]);await refreshData()}else{showCreateWarehousePrompt()}}catch(e){toast("网络异常或无权限","error")}}
+function showSettings(){var role=myRole();var html="<h2>设置<span class="close-btn" onclick="hideModal()">✖</span></h2>";if(role==="owner"||role==="admin")html+="<div class="admin-btn" onclick="showMemberPanel()">成员管理</div>";html+="<div class="admin-btn" onclick="showChangePassword()">修改密码</div>";if(ST.user.role==="admin")html+="<div class="admin-btn" onclick="showAdminPanel()">管理员面板</div>";showModal(html)}
+function showChangePassword(){showModal("<h2>修改密码<span class="close-btn" onclick="hideModal()">✖</span></h2><label>旧密码</label><input id="modal-oldpw" type="password"><label>新密码</label><input id="modal-newpw" type="password"><label>确认新密码</label><input id="modal-cnewpw" type="password"><button class="btn-primary" onclick="handleChangePassword()">保存</button>")}
+async function handleChangePassword(){var old=GS("modal-oldpw").value;var pw=GS("modal-newpw").value;var cpw=GS("modal-cnewpw").value;if(!old||!pw){toast("请填写密码","error");return}if(pw.length<6){toast("新密码至少6位","error");return}if(pw!==cpw){toast("两次密码不一致","error");return}try{var users=await sbGet("accounts",{"id":"eq."+ST.user.id});if(!users||users.length===0||users[0].password!==old){toast("旧密码错误","error");return}await sbPatch("accounts",{"id":"eq."+ST.user.id},{password:pw});toast("密码修改成功","success");hideModal()}catch(e){toast("网络异常","error")}}
+async function showMemberPanel(){var members=[];try{var raw=await sbGet("warehouse_members",{"warehouse_id":"eq."+ST.warehouse.id});members=raw||[];for(var i=0;i<members.length;i++){var u=await sbGet("accounts",{"id":"eq."+members[i].user_id,"select":"id,username"});if(u&&u[0])members[i].username=u[0].username}}catch(e){}var html="<h2>成员管理<span class="close-btn" onclick="hideModal()">✖</span></h2>";if(myRole()==="owner"||ST.user.role==="admin")html+="<div style="margin-bottom:12px"><input id="modal-invite-un" placeholder="输入用户名邀请员工"><button class="btn-primary" onclick="handleInvite()">邀请</button></div>";html+="<div>";for(var i=0;i<members.length;i++){var m=members[i];var roleText=m.role==="owner"?"老板":"员工";html+="<div class="member-item"><div class="mi-info">"+esc(m.username||"?")+"<small> ("+roleText+")</small></div><div class="mi-actions">";if(myRole()==="owner"||ST.user.role==="admin"){if(m.role==="staff")html+="<button class="btn-danger" onclick="handleRemoveMember('"+m.user_id+"')">移除</button>";if(m.role==="staff"&&ST.user.role==="admin")html+="<button class="btn-primary-sm" onclick="handleTransferOwnership('"+m.user_id+"')">设为老板</button>"}html+="</div></div>"}html+="</div>";showModal(html)}
+async function handleInvite(){var un=GS("modal-invite-un").value.trim();if(!un){toast("请输入用户名","error");return}try{var result=await sbRpc("add_member",{p_warehouse_id:ST.warehouse.id,p_username:un,p_operator_id:ST.user.id});if(result==="ok"){toast("邀请成功","success");showMemberPanel()}else if(result==="用户不存在"){toast("该用户名不存在，请让对方先注册","error")}else if(result==="已是成员"){toast("该用户已在仓库中","error")}else{toast(result||"无权限","error")}}catch(e){toast("网络异常","error")}}
+async function handleRemoveMember(userId){try{await sbDel("warehouse_members",{"warehouse_id":"eq."+ST.warehouse.id,"user_id":"eq."+userId});toast("已移除","success");showMemberPanel()}catch(e){toast("网络异常","error")}}
+async function handleTransferOwnership(newOwnerId){try{await sbRpc("transfer_ownership",{p_warehouse_id:ST.warehouse.id,p_owner_id:ST.user.id,p_new_owner_id:newOwnerId});toast("已转让","success");showMemberPanel()}catch(e){toast("网络异常","error")}}
+function switchTab(tab){ST.activeTab=tab;var tabs=GSA("#tab-bar .tab");for(var i=0;i<tabs.length;i++)tabs[i].classList.remove("active");var contents=GSA(".tab-content");for(var i=0;i<contents.length;i++)contents[i].classList.remove("active");if(tab==="inv"){tabs[0].classList.add("active");GS("tab-inv").classList.add("active");renderInventory()}else{tabs[1].classList.add("active");GS("tab-recipe").classList.add("active");renderRecipes()}LSet("active_tab",tab)}
+function onLocFilter(){ST.locFilter=GS("loc-filter").value;renderInventory()}
+function toggleShowAll(){ST.showAll=!ST.showAll;GS("btn-toggle-all").textContent=ST.showAll?"折叠":"展开全部";LSet("show_all",ST.showAll?"1":"0");renderInventory()}
+/* <<<<< INVENTORY MODULE >>>>> */
+function renderInventory(){var inv=ST.data.inv;var locs=ST.data.locs;if(!inv||!locs)return;var filtered=inv;if(ST.locFilter)filtered=inv.filter(function(item){return item.location_id===ST.locFilter});var showCount=ST.showAll?filtered.length:Math.min(50,filtered.length);var sel=GS("loc-filter");var cv=sel.value;sel.innerHTML="<option value="">全部位置</option>";for(var i=0;i<locs.length;i++){sel.innerHTML+="<option value=""+locs[i].id+"">"+esc(locs[i].name)+"</option>"}sel.value=cv;var list=GS("inv-list");list.innerHTML="";for(var i=0;i<showCount;i++){var item=filtered[i];var loc=locs.find(function(l){return l.id===item.location_id});var expiry=getExpiry(item);var div=document.createElement("div");div.className="inv-item"+(expiry?" "+expiry:"");var nDiv=document.createElement("div");nDiv.className="info";nDiv.innerHTML="<div class="name">"+esc(item.name)+"</div><div class="meta">"+esc(loc?loc.name:"?")+" · "+timeAgo(item.created_at)+"</div>";var qDiv=document.createElement("div");qDiv.className="qty-wrap";qDiv.textContent=item.qty;if(item.warning){var wi=document.createElement("span");wi.className="warn-icon show";wi.textContent="?";wi.title="部分食材已转移";wi.onclick=function(e){e.stopPropagation();toast("部分食材已转移","info")};qDiv.appendChild(wi)}var aDiv=document.createElement("div");aDiv.className="actions";var bM=document.createElement("button");bM.className="btn-move";bM.textContent="移";bM.onclick=function(e){e.stopPropagation();showMoveLocation(item.id)};var bD=document.createElement("button");bD.className="btn-del";bD.textContent="删";bD.onclick=function(e){e.stopPropagation();handleDeleteStock(item.id)};aDiv.appendChild(bM);aDiv.appendChild(bD);div.appendChild(nDiv);div.appendChild(qDiv);div.appendChild(aDiv);list.appendChild(div)}if(filtered.length>showCount&&!ST.showAll){var more=document.createElement("div");more.style.cssText="text-align:center;padding:8px;color:var(--primary);cursor:pointer;font-size:13px";more.textContent="还有"+(filtered.length-showCount)+"项，点击展开全部";more.onclick=function(){ST.showAll=true;GS("btn-toggle-all").textContent="折叠";LSet("show_all","1");renderInventory()};list.appendChild(more)}checkUndo()}
+function showAddStock(){var locs=ST.data.locs;var lo="";for(var i=0;i<locs.length;i++)lo+="<option value=""+locs[i].id+"">"+esc(locs[i].name)+"</option>";showModal("<h2>新增食材<span class="close-btn" onclick="hideModal()">✖</span></h2><label>名称</label><input id="modal-name" placeholder="食材名称"><label>数量</label><input id="modal-qty" placeholder="如: 5斤、2个、1包"><label>位置</label><select id="modal-loc">"+lo+"</select><button class="btn-primary" onclick="handleAddStock()">添加</button>")}
+async function handleAddStock(){var name=GS("modal-name").value.trim();var qty=GS("modal-qty").value.trim();var locId=GS("modal-loc").value;if(!name||!qty){toast("请填写名称和数量","error");return}try{await sbPost("inventory",{warehouse_id:ST.warehouse.id,name:name,qty:qty,location_id:locId});hideModal();await refreshData();toast("已添加","success")}catch(e){toast("网络异常","error")}}
+async function handleDeleteStock(id){var item=ST.data.inv.find(function(i){return i.id===id});if(!item)return;try{ST.undoQ.push({data:item,deletedAt:Date.now()});LSet("undo_queue",ST.undoQ);await sbDel("inventory",{"id":"eq."+id});await refreshData();toast("已删除，5分钟内可撤回","info")}catch(e){toast("网络异常","error")}}
+function checkUndo(){ST.undoQ=LGet("undo_queue",[]);var now=Date.now();ST.undoQ=ST.undoQ.filter(function(q){return now-q.deletedAt<300000});LSet("undo_queue",ST.undoQ);var bar=GS("undo-bar");if(ST.undoQ.length===0){bar.style.display="none";return}bar.style.display="flex";GS("undo-msg").textContent="刚删除了"+ST.undoQ[0].data.name;GS("btn-undo").onclick=function(){handleUndo()}}
+async function handleUndo(){if(ST.undoQ.length===0)return;var item=ST.undoQ[0].data;try{await sbPost("inventory",{warehouse_id:item.warehouse_id,name:item.name,qty:item.qty,location_id:item.location_id,warning:item.warning});ST.undoQ.shift();LSet("undo_queue",ST.undoQ);checkUndo();await refreshData();toast("已撤回","success")}catch(e){toast("网络异常","error")}}
+function showMoveLocation(itemId){var locs=ST.data.locs;var html="<h2>移动到哪个位置？<span class="close-btn" onclick="hideModal()">✖</span></h2>";for(var i=0;i<locs.length;i++){var tc=locs[i].type==="常温"?"room":locs[i].type==="冷藏"?"cold":"freeze";html+="<div class="loc-option" onclick="handleMoveStock('"+itemId+"','"+locs[i].id+"')"><span class="loc-type "+tc+"">"+locs[i].type+"</span>"+esc(locs[i].name)+"</div>"}showModal(html)}
+async function handleMoveStock(itemId,locId){try{await sbPatch("inventory",{"id":"eq."+itemId},{location_id:locId});hideModal();await refreshData();toast("已移动","success")}catch(e){toast("网络异常","error")}}
+/* <<<<< AI MODULE >>>>> */
+async function handleAI(){if(ST.aiBusy)return;var input=GS("ai-input");var text=input.value.trim();if(!text)return;ST.aiBusy=1;GS("status-dot").className="status-dot busy";GS("btn-send").disabled=true;input.disabled=true;GS("ai-bubble").style.display="block";GS("ai-bubble").textContent="正在分析...☁️";try{var invList=ST.data.inv.map(function(i){return i.name+"("+i.qty+","+(ST.data.locs.find(function(l){return l.id===i.location_id})||{}).name+")"}).join(",");var locList=ST.data.locs.map(function(l){return l.name+"["+l.type+"]"}).join(",");var sys="你是食材管理系统的智能库存助手。用户会用口语化中文描述进货、用料、移库。请结合【当前仓库】【当前库存】与【已有位置】，输出且仅输出一个JSON对象：{"action":"add_stock|use_stock|move_stock|new_location|ask_qty|chat","items":[{"item":"食材名","qty":"数量+单位","loc":"位置名"}],"reply":"回复"}规则：用户说买了/进了/到货/来了 → add_stock；用了/做了/吃掉/消耗 → use_stock；移到/放到/挪到/换到 → move_stock。位置从【已有位置】中选最接近的，无匹配则new_location。缺数量则ask_qty。闲聊则chat。【当前仓库】:"+esc(ST.warehouse.name)+"【当前库存】:"+esc(invList)+"【已有位置】:"+esc(locList);var msgs=[{role:"system",content:sys},{role:"user",content:text}];var resp=await fetch("https://api.deepseek.com/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+CONFIG.DEEPSEEK_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:"deepseek-chat",messages:msgs,response_format:{type:"json_object"}}),signal:AbortSignal.timeout(CONFIG.DEEPSEEK_TIMEOUT)});if(!resp.ok)throw new Error("HTTP "+resp.status);var data=await resp.json();var parsed=JSON.parse(data.choices[0].message.content);GS("ai-bubble").textContent=parsed.reply||"已处理";setTimeout(function(){GS("ai-bubble").style.display="none"},5000);await processAIResult(parsed)}catch(e){console.error(e);GS("ai-bubble").textContent="AI 未能理解，请手动操作";setTimeout(function(){GS("ai-bubble").style.display="none"},5000)}finally{ST.aiBusy=0;GS("status-dot").className="status-dot";GS("btn-send").disabled=false;input.disabled=false;input.value=""}}
+async function processAIResult(ai){var action=ai.action;var items=ai.items||[];try{if(action==="add_stock"){for(var i=0;i<items.length;i++){var it=items[i];var lid=null;if(it.loc){var f=ST.data.locs.find(function(l){return l.name===it.loc});if(f)lid=f.id}await sbPost("inventory",{warehouse_id:ST.warehouse.id,name:it.item,qty:it.qty||"?",location_id:lid});await sbPost("logs",{warehouse_id:ST.warehouse.id,user_id:ST.user.id,action:"入库:"+it.item,detail:it.qty||"",log_type:"stock"})}await refreshData();toast("已入库","success")}else if(action==="use_stock"){var matches=[];for(var i=0;i<items.length;i++){var it=items[i];var fi=ST.data.inv.filter(function(s){return s.name.indexOf(it.item)>=0});for(var j=0;j<fi.length;j++)matches.push({item:it,stock:fi[j]})}if(matches.length>1){showMultiSelectUI(matches,action);return}if(matches.length===1){await sbDel("inventory",{"id":"eq."+matches[0].stock.id});await sbPost("logs",{warehouse_id:ST.warehouse.id,user_id:ST.user.id,action:"用料:"+matches[0].item.item,detail:matches[0].item.qty||"",log_type:"stock"});await refreshData();toast("已扣减","success")}else{toast("未找到匹配的库存项","error")}}else if(action==="move_stock"){for(var i=0;i<items.length;i++){var it=items[i];var loc=ST.data.locs.find(function(l){return l.name===it.loc});if(!loc){toast("未找到位置:"+it.loc,"error");continue}var si=ST.data.inv.filter(function(s){return s.name.indexOf(it.item)>=0});if(si.length>1){showMultiSelectUI(si.map(function(s){return{item:it,stock:s}}),action,loc.id);return}if(si.length===1){if(it.qty&&it.qty!==si[0].qty){await sbPatch("inventory",{"id":"eq."+si[0].id},{location_id:loc.id,warning:1})}else{await sbPatch("inventory",{"id":"eq."+si[0].id},{location_id:loc.id})}await sbPost("logs",{warehouse_id:ST.warehouse.id,user_id:ST.user.id,action:"移库:"+it.item,detail:it.loc,log_type:"stock"})}}await refreshData();toast("已移动","success")}else if(action==="new_location"){var ln=(items[0]||{}).loc||"";showModal("<h2>新建位置</h2><p style="margin-bottom:12px;color:#6B7280">是否新增位置“"+esc(ln)+"”？</p><label>位置类型</label><select id="modal-loc-type"><option value="常温">常温</option><option value="冷藏">冷藏</option><option value="冷冻">冷冻</option></select><button class="btn-primary" onclick="handleNewLocation('"+ln+"')">创建</button>")}else if(action==="ask_qty"){GS("ai-input").placeholder="请输入数量...";GS("ai-input").focus()}else if(action==="chat"){}else{toast("AI返回了未知操作","error")}}catch(e){console.error(e);toast("执行失败","error")}}
+function showMultiSelectUI(matches,action,locId){var html="<h2>请选择要操作的库存项<span class="close-btn" onclick="hideModal()">✖</span></h2>";for(var i=0;i<matches.length;i++){var m=matches[i];var loc=ST.data.locs.find(function(l){return l.id===m.stock.location_id});html+="<div class="ai-stock-option" onclick="executeSelectedAction('"+i+"','"+action+"','"+(locId||"")+"')">"+esc(m.stock.name)+" <span style="color:#6B7280">"+esc(m.stock.qty)+" "+esc(loc?loc.name:"")+"</span></div>"}showModal(html)}
+async function executeSelectedAction(idx,action,locId){hideModal();setTimeout(async function(){var items=ST.data.inv;if(idx>=items.length)return;var stock=items[parseInt(idx)];try{if(action==="use_stock"){await sbDel("inventory",{"id":"eq."+stock.id});await sbPost("logs",{warehouse_id:ST.warehouse.id,user_id:ST.user.id,action:"用料:"+stock.name,detail:"",log_type:"stock"});await refreshData();toast("已扣减","success")}else if(action==="move_stock"){if(locId){await sbPatch("inventory",{"id":"eq."+stock.id},{location_id:locId});await sbPost("logs",{warehouse_id:ST.warehouse.id,user_id:ST.user.id,action:"移库:"+stock.name,detail:locId,log_type:"stock"});await refreshData();toast("已移动","success")}}}catch(e){toast("执行失败","error")}},100)}
+async function handleNewLocation(locName){var type=GS("modal-loc-type").value;try{await sbPost("locations",{warehouse_id:ST.warehouse.id,name:locName,type:type});hideModal();await refreshData();toast("已创建位置","success")}catch(e){toast("网络异常","error")}}
+/* <<<<< RECIPE MODULE >>>>> */
+function renderRecipes(){var recs=ST.data.recs;var list=GS("recipe-list");list.innerHTML="";for(var i=0;i<recs.length;i++){var r=recs[i];var card=document.createElement("div");card.className="recipe-card";card.innerHTML="<div class="rc-del" onclick="event.stopPropagation();handleDeleteRecipe('"+r.id+"')">删除</div><div class="rc-title">"+esc(r.name)+"</div><div class="rc-body" id="rcb-"+i+""><p>食材："+esc(JSON.stringify(r.ingredients||[]))+"</p><ol>"+(r.steps||"").split("
+").map(function(s){return "<li>"+esc(s)+"</li>"}).join("")+"</ol></div>";card.onclick=function(){var b=this.querySelector(".rc-body");b.classList.toggle("open")};list.appendChild(card)}}
+function showAddRecipe(){showModal("<h2>新增菜谱<span class="close-btn" onclick="hideModal()">✖</span></h2><label>菜名</label><input id="modal-rec-name" placeholder="菜品名称"><label>食材（JSON格式）</label><input id="modal-rec-ing" placeholder="["土豆","肉"]"><label>步骤（每行一步）</label><textarea id="modal-rec-steps" style="width:100%;height:100px;border:1px solid var(--border);border-radius:var(--radius);padding:8px;outline:none;margin-bottom:12px;resize:vertical;font-family:inherit;font-size:13px"></textarea><button class="btn-primary" onclick="handleAddRecipe()">保存</button>")}
+async function handleAddRecipe(){var name=GS("modal-rec-name").value.trim();if(!name){toast("请输入菜名","error");return}var ing=[];try{ing=JSON.parse(GS("modal-rec-ing").value||"[]")}catch(e){}var steps=GS("modal-rec-steps").value.trim();try{await sbPost("recipes",{warehouse_id:ST.warehouse.id,name:name,ingredients:ing,steps:steps});hideModal();await refreshData();toast("已保存","success")}catch(e){toast("网络异常","error")}}
+async function handleDeleteRecipe(id){try{await sbDel("recipes",{"id":"eq."+id});await refreshData();toast("已删除","success")}catch(e){toast("网络异常","error")}}
+/* <<<<< ADMIN MODULE >>>>> */
+async function showAdminPanel(){if(ST.user.role!=="admin"){toast("无权限","error");return}var users=[];try{users=await sbGet("accounts",{order:"created_at.asc"})}catch(e){}var html="<h2>管理员面板<span class="close-btn" onclick="hideModal()">✖</span></h2>";html+="<div class="admin-section"><h3>用户管理</h3><div style="max-height:200px;overflow-y:auto">";for(var i=0;i<users.length;i++){var u=users[i];html+="<div class="user-row"><span>"+esc(u.username)+" <small>("+esc(u.role)+")</small></span><span style="color:var(--danger);cursor:pointer;font-size:12px" onclick="adminDeleteUser('"+u.id+"')">删除</span></div>"}html+="</div></div>";html+="<div class="admin-section"><h3>批量导入用户</h3><div class="admin-btn" onclick="document.getElementById('file-input').click()">选择 Excel 文件</div></div>";html+="<div class="admin-section"><h3>系统</h3><div class="admin-btn" onclick="adminClearCache()">清除本地缓存</div></div>";showModal(html)}
+async function adminDeleteUser(id){if(!confirm("确认删除该用户？"))return;try{await sbRpc("delete_user_cascade",{p_admin_id:ST.user.id,p_target_id:id});hideModal();toast("用户已删除","success");showAdminPanel()}catch(e){toast("网络异常","error")}}
+function adminClearCache(){localStorage.clear();toast("已清除","success")}
+GS("file-input").onchange=function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:"array"});var sh=wb.Sheets[wb.SheetNames[0]];var rows=XLSX.utils.sheet_to_json(sh,{header:1});for(var i=1;i<rows.length;i++){var un=String(rows[i][0]||"").trim();var pw=String(rows[i][1]||"123456").trim();if(un)sbPost("accounts",{username:un,password:pw,role:"user"}).then(function(){toast("导入中...","info")}).catch(function(){})}toast("导入完成","info")}catch(ex){toast("解析失败","error")}};reader.readAsArrayBuffer(file)}
+/* <<<<< INIT >>>>> */
+async function init(){var saved=LGet("current_user",null);var auto=LGet("auto_login","0");if(saved&&auto==="1"){ST.user=saved;showPage("page-main");await loadUserWarehouses();var last=LGet("current_warehouse",null);if(last){var found=ST.warehouses.find(function(w){return w.id===last.id});if(found){ST.warehouse=found;await refreshData();return}}if(ST.warehouses.length>0){ST.warehouse=ST.warehouses[0];LSet("current_warehouse",ST.warehouses[0]);await refreshData()}return}var accs=LGet("saved_accounts",[]);if(accs.length>0){var last=accs[accs.length-1];GS("login-un").value=last.u||"";GS("login-pw").value=last.p||"";GS("login-remember").checked=true}ST.showAll=LGet("show_all","0")==="1";if(ST.showAll)GS("btn-toggle-all").textContent="折叠";ST.activeTab=LGet("active_tab","inv");var tabs=GSA("#tab-bar .tab");var conts=GSA(".tab-content");for(var i=0;i<tabs.length;i++)tabs[i].classList.remove("active");for(var i=0;i<conts.length;i++)conts[i].classList.remove("active");if(ST.activeTab==="inv"){tabs[0].classList.add("active");conts[0].classList.add("active")}else{tabs[1].classList.add("active");conts[1].classList.add("active")}}
+init()
+
+
+
+</script>
+ </body>
+ </html>
