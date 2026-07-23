@@ -455,7 +455,7 @@ function LDel(k){try{localStorage.removeItem("ks_"+k)}catch(e){}}
 /* <<<<< SUPABASE REST API HELPERS >>>>> */
 var SB_BASE=CONFIG.SUPABASE_URL+"/rest/v1/";
 var SB_HEADERS={"apikey":CONFIG.SUPABASE_ANON_KEY,"Authorization":"Bearer "+CONFIG.SUPABASE_ANON_KEY,"Content-Type":"application/json"};
-function sbQS(f){if(!f)return"";var p=new URLSearchParams();for(var k in f){if(k==="select"||k==="order")p.set(k,f[k]);else p.set(k,"eq."+f[k])}var s=p.toString();return s?"?"+s:""}
+function sbQS(f){if(!f)return"";var p=new URLSearchParams();for(var k in f){p.set(k,f[k])}var s=p.toString();return s?"?"+s:""}
 async function sbGet(t,f){var r=await fetch(SB_BASE+t+sbQS(f),{headers:Object.assign({},SB_HEADERS,{"Prefer":"count=exact"})});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
 async function sbPost(t,b){var r=await fetch(SB_BASE+t,{method:"POST",headers:SB_HEADERS,body:JSON.stringify(b)});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
 async function sbPatch(t,f,b){var r=await fetch(SB_BASE+t+sbQS(f),{method:"PATCH",headers:SB_HEADERS,body:JSON.stringify(b)});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
